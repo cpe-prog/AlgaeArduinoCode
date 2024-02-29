@@ -2,4 +2,5 @@
 
 # ARDUINO CODE
 
-- with deffirent sensors the send data to web app realtime using firebase and esp8266 wifi
+- Have deffirent sensors that send data to web app realtime using firebase realtime database powerd by esp8266 board.
+- Saved data to mongodb that can filtered in preview page using date.
