@@ -145,7 +145,7 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    if (Firebase.RTDB.getBool(&fbdo, "SENSORS/1/outerCo2")){
+    if (Firebase.RTDB.getInt(&fbdo, "SENSORS/1/outerCo2")){
       if (fbdo.dataType() == "int"){
       int outerCo2 = fbdo.intData();
       Serial.print("OuterCo2: ");

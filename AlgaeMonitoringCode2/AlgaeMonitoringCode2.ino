@@ -4,10 +4,8 @@
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
 
-#define INNER_FAN_IN1 1 // IN1 pin connected to IN1 of L298N for inner fan
-#define INNER_FAN_IN2 2 // IN2 pin connected to IN2 of L298N for inner fan
-#define OUTER_FAN_IN3 3 // IN1 pin connected to IN1 of L298N for outer fan
-#define OUTER_FAN_IN4 4 // IN2 pin connected to IN2 of L298N for outer fan
+#define INNER_FAN_ENA 1
+#define INNER_FAN_PIN 2
 
 #define WIFI_SSID "I'm in!"
 #define WIFI_PASSWORD "connected"
@@ -22,17 +20,14 @@ FirebaseConfig config;
 unsigned long sendDataPrevMillis = 0;
 bool signupOK = false;
 
-int innerFanSpeed = 0;
-int outerFanSpeed = 0;
 long outerCo2;
+int innerFanValue = 0;
 
 
 void setup() {
   Serial.begin(9600);
-  pinMode(INNER_FAN_IN1, OUTPUT);
-  pinMode(INNER_FAN_IN2, OUTPUT);
-  pinMode(OUTER_FAN_IN1, OUTPUT);
-  pinMode(OUTER_FAN_IN2, OUTPUT);
+  pinMode(INNER_FAN_ENA, OUTPUT);
+  pinMode(INNER_FAN_PIN, OUTPUT);
   pinMode(A0, INPUT);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
@@ -63,18 +58,10 @@ void setup() {
 
 }
 
-void setFanSpeed(int IN1, int IN2, int speed) {
-  digitalWrite(IN1, speed > 0 ? HIGH : LOW);
-  digitalWrite(IN2, speed < 0 ? HIGH : LOW);
-  analogWrite(FAN_ENA, abs(speed));
-}
-
-
 
 void loop() {
   if (Firebase.ready() && signupOK && (millis() -  sendDataPrevMillis > 1000 || sendDataPrevMillis == 0 )) {
     sendDataPrevMillis = millis();
-
     outerCo2 = analogRead(A0); 
 
     if (Firebase.RTDB.setFloat(&fbdo, "SENSORS/1/outerCo2", outerCo2)){
@@ -88,6 +75,26 @@ void loop() {
 
     Serial.print("");
     Serial.println("_______________________________________");
+
+
+    if (Firebase.RTDB.getInt(&fbdo, "Controls/1/innerFanValue")){
+       if (fbdo.dataType() == "int") {
+        innerFanValue = fbdo.intData();
+        if (innerFanValue == 0) {
+          analogWrite(INNER_FAN_ENA, 0); // Stop the fan
+          digitalWrite(INNER_FAN_PIN, LOW);
+        } else if (innerFanValue >= 1 && innerFanValue <= 125) {
+          analogWrite(INNER_FAN_ENA, 128); // Set low speed
+          digitalWrite(INNER_FAN_PIN, HIGH);
+        } else if (innerFanValue >= 126 && innerFanValue <= 255) {
+          analogWrite(INNER_FAN_ENA, 255); // Set high speed
+          digitalWrite(INNER_FAN_PIN, HIGH);
+        }
+      }
+    }
+    else {
+      Serial.println("FAILED: " + fbdo.errorReason());
+    }
 
   }
 
