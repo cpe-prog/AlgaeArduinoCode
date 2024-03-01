@@ -4,8 +4,12 @@
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
 
-#define INNER_FAN_ENA 1
-#define INNER_FAN_PIN 2
+#define INNER_FAN_ENA  D1
+#define INNER_FAN_IN1  D2
+#define INNER_FAN_IN2  D3
+#define OUTER_FAN_ENB  D5
+#define OUTER_FAN_IN1  D6
+#define OUTER_FAN_IN2  D7
 
 #define WIFI_SSID "I'm in!"
 #define WIFI_PASSWORD "connected"
@@ -22,12 +26,17 @@ bool signupOK = false;
 
 long outerCo2;
 int innerFanValue = 0;
+int outerFanValue = 0;
 
 
 void setup() {
-  Serial.begin(9600);
   pinMode(INNER_FAN_ENA, OUTPUT);
-  pinMode(INNER_FAN_PIN, OUTPUT);
+  pinMode(INNER_FAN_IN1, OUTPUT);
+  pinMode(INNER_FAN_IN2, OUTPUT);
+  pinMode(OUTER_FAN_ENB, OUTPUT);
+  pinMode(OUTER_FAN_IN1, OUTPUT);
+  pinMode(OUTER_FAN_IN2, OUTPUT);
+  Serial.begin(9600);
   pinMode(A0, INPUT);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
@@ -50,18 +59,53 @@ void setup() {
   else{
     Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
-
   config.token_status_callback = tokenStatusCallback;
   
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
-
 }
 
+void innerSpeedControl()
+{
+   if (Firebase.RTDB.getInt(&fbdo, "Controls/1/innerFan")){
+      if (fbdo.dataType() == "int"){
+      innerFanValue = fbdo.intData();
+      analogWrite(INNER_FAN_ENA, innerFanValue);
+      digitalWrite(INNER_FAN_IN1, HIGH);
+      digitalWrite(INNER_FAN_IN2, LOW);
+      Serial.print("Inner Fan: ");
+      Serial.println(innerFanValue);
+      }
+    }
+    else {
+      Serial.println("FAILED: " + fbdo.errorReason());
+    }
+}
+
+void outerSpeedControl()
+{
+   if (Firebase.RTDB.getInt(&fbdo, "Controls/1/outerFan")){
+      if (fbdo.dataType() == "int"){
+      outerFanValue = fbdo.intData();
+      analogWrite(OUTER_FAN_ENB, outerFanValue);
+      digitalWrite(OUTER_FAN_IN1, HIGH);
+      digitalWrite(OUTER_FAN_IN2, LOW);
+      Serial.print("Outer Fan: ");
+      Serial.println(outerFanValue);
+      }
+    }
+    else {
+      Serial.println("FAILED: " + fbdo.errorReason());
+    }
+
+}
 
 void loop() {
   if (Firebase.ready() && signupOK && (millis() -  sendDataPrevMillis > 1000 || sendDataPrevMillis == 0 )) {
     sendDataPrevMillis = millis();
+    innerSpeedControl();
+    outerSpeedControl();
+
     outerCo2 = analogRead(A0); 
 
     if (Firebase.RTDB.setFloat(&fbdo, "SENSORS/1/outerCo2", outerCo2)){
@@ -76,26 +120,8 @@ void loop() {
     Serial.print("");
     Serial.println("_______________________________________");
 
-
-    if (Firebase.RTDB.getInt(&fbdo, "Controls/1/innerFanValue")){
-       if (fbdo.dataType() == "int") {
-        innerFanValue = fbdo.intData();
-        if (innerFanValue == 0) {
-          analogWrite(INNER_FAN_ENA, 0); // Stop the fan
-          digitalWrite(INNER_FAN_PIN, LOW);
-        } else if (innerFanValue >= 1 && innerFanValue <= 125) {
-          analogWrite(INNER_FAN_ENA, 128); // Set low speed
-          digitalWrite(INNER_FAN_PIN, HIGH);
-        } else if (innerFanValue >= 126 && innerFanValue <= 255) {
-          analogWrite(INNER_FAN_ENA, 255); // Set high speed
-          digitalWrite(INNER_FAN_PIN, HIGH);
-        }
-      }
-    }
-    else {
-      Serial.println("FAILED: " + fbdo.errorReason());
-    }
-
+    Serial.print("");
+    Serial.println("_______________________________________");
   }
 
 }
