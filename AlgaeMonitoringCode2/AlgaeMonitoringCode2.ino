@@ -11,10 +11,10 @@
 #define OUTER_FAN_IN1  D6
 #define OUTER_FAN_IN2  D7
 
-#define WIFI_SSID "I'm in!"
-#define WIFI_PASSWORD "connected"
-#define API_KEY "AIzaSyCrQtoEKFuxzEH9aINfC4QcYn8i1ijTRXk"
-#define DATABASE_URL "monitoring-e8ef8-default-rtdb.firebaseio.com/" 
+#define WIFI_SSID "WIFI"
+#define WIFI_PASSWORD "WIFI PASSWORD"
+#define API_KEY "API KEY"
+#define DATABASE_URL "DATABASE URL" 
 
 
 FirebaseData fbdo;
