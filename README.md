@@ -1,6 +1,4 @@
-# AlgaeMonitoring connected to monitoring web app
+# AlgaeMonitoring
 
-# ARDUINO CODE
-
-- Have deffirent sensors that send data to web app realtime using firebase realtime database powerd by esp8266 board.
-- Saved data to mongodb that can filtered in preview page using date.
+- Have deffirent sensors that send data to web application realtime using firebase realtime database powered by esp8266 board.
+- This saved data to mongodb that can filtered in preview page using saved date.
